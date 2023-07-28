@@ -2,7 +2,7 @@ import express from "express";
 import database from "./database.js";
 import fs from "fs";
 import moment from "moment";
-import bcrypt from "bcrypt";
+import importFiles from "./importFiles.js";
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.get("/", (req, res) => {
 {
   //! Students
   router.get("/students", async (req, res) => {
-    const table = "studentsview";
+    const table = "studentsView";
     const studentsview = await database.executeQuery(`SELECT * FROM ${table}`);
     const partialExists = fs.existsSync(`views/partials/controls/${table}.ejs`);
 
@@ -39,9 +39,9 @@ router.get("/", (req, res) => {
 
   //! Overseas Programs
   router.get("/overseasprograms", async (req, res) => {
-    const table = "overseasprogramsview";
+    const table = "overseasProgramsView";
     const overseasprogramsview = await database.executeQuery(
-      `SELECT * FROM ${table}`,
+      `SELECT * FROM ${table}`
     );
     const partialExists = fs.existsSync(`views/partials/controls/${table}.ejs`);
 
@@ -57,10 +57,10 @@ router.get("/", (req, res) => {
   //! Trips
   router.get("/trips", async (req, res) => {
     const tripdetails = await database.executeQuery(
-      "SELECT * FROM tripdetails",
+      "SELECT * FROM tripDetails"
     );
     const partialExists = fs.existsSync(
-      `views/partials/controls/tripdetails.ejs`,
+      `views/partials/controls/tripdetails.ejs`
     );
 
     res.render("universal", {
@@ -97,7 +97,7 @@ router.get("/audittable", async (req, res) => {
     return;
   }
 
-  const audittable = await database.executeQuery("SELECT * FROM audittable");
+  const audittable = await database.executeQuery("SELECT * FROM auditTable");
   const partialExists = fs.existsSync(`views/partials/controls/audittable.ejs`);
 
   res.render("universal", {
@@ -149,8 +149,7 @@ router.get("/manage", async (req, res) => {
   //! Login action
   router.post("/login", (req, res) => {
     let { username, password } = req.body;
-    const query =
-      "SELECT * FROM users WHERE username = ? AND BINARY password = ?";
+      const query = `SELECT * from users where username = '${username}' and password = '${password}'`;
     const values = [username, password];
     database.executeQuery(query, values).then((result) => {
       if (result.length == 1) {
@@ -179,7 +178,7 @@ router.get("/database/views/kpi/:num", async (req, res) => {
     res.send("Invalid KPI number");
     return;
   }
-  const kpi = await database.executeQuery(`SELECT * FROM kpi${num}`);
+  const kpi = await database.executeQuery(`SELECT * FROM KPI${num}`);
   res.send(kpi);
 });
 
@@ -198,7 +197,7 @@ router.post("/upload", (req, res) => {
     const file = req.files.file;
     const filetype = file.name.split(".")[1];
     const filesize = file.size;
-    const allowedTypes = ["jpg", "jpeg", "png", "gif"];
+    const allowedTypes = ["xml", "xls", "xlsx", "json", "csv"];
     const allowedSize = 1024 * 1024; // 1 MB
 
     if (!allowedTypes.includes(filetype)) {
@@ -212,7 +211,8 @@ router.post("/upload", (req, res) => {
     }
 
     const timestamp = moment().format("YYYYMMDD_HHmm");
-    const filename = `${req.body.name}_${timestamp}.${filetype}`;
+    let filename = `${req.body.name}_${timestamp}.${filetype}`;
+    filename = `${req.body.name.replace(/\s/g, "")}_${timestamp}.${filetype}`;
 
     file.mv(`public/uploads/${filename}`, (err) => {
       if (err) {
@@ -222,7 +222,9 @@ router.post("/upload", (req, res) => {
       }
     });
 
-    // once its uploaded, add it to the database
+    if (fileType == "xml") {
+    } else if (filetype === "xls" || filetype === "xlsx") {
+    }
   }
 });
 
